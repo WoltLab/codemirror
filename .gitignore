@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build output, copied into WCF by `release.sh`
+dist/
+
+# Logs
+npm-debug.log*
+*.log
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+._*
+Thumbs.db
