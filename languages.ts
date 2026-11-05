@@ -15,7 +15,8 @@ function legacy(parser: StreamParser<unknown>): LanguageSupport {
 }
 
 // `haml`, `haskell-literate`, `rst` and `slim` have no counterpart in
-// CodeMirror 6 and fall back to plain text.
+// CodeMirror 6 and fall back to plain text. `smarty` used plain text as the
+// base mode in CodeMirror 5, but every template is HTML.
 const languages = new Map<string, () => Promise<LanguageSupport>>([
   ["apl", async () => legacy((await import("@codemirror/legacy-modes/mode/apl")).apl)],
   ["asciiarmor", async () => legacy((await import("@codemirror/legacy-modes/mode/asciiarmor")).asciiArmor)],
@@ -106,6 +107,8 @@ const languages = new Map<string, () => Promise<LanguageSupport>>([
   ["shell", async () => legacy((await import("@codemirror/legacy-modes/mode/shell")).shell)],
   ["sieve", async () => legacy((await import("@codemirror/legacy-modes/mode/sieve")).sieve)],
   ["smalltalk", async () => legacy((await import("@codemirror/legacy-modes/mode/smalltalk")).smalltalk)],
+  ["smarty", async () => (await import("./smarty")).smarty()],
+  ["smartymixed", async () => (await import("./smarty")).smarty()],
   ["solr", async () => legacy((await import("@codemirror/legacy-modes/mode/solr")).solr)],
   ["soy", async () => (await import("@codemirror/lang-html")).html()],
   ["sparql", async () => legacy((await import("@codemirror/legacy-modes/mode/sparql")).sparql)],

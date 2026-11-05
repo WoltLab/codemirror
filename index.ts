@@ -16,5 +16,6 @@ export * from "@codemirror/lint";
 export * from "@codemirror/search";
 export * from "@codemirror/state";
 export * from "@codemirror/view";
+export * from "@lezer/highlight";
 export { basicSetup, minimalSetup } from "codemirror";
 export { loadLanguage } from "./languages";

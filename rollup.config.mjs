@@ -1,3 +1,4 @@
+import { lezer } from "@lezer/generator/rollup";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import esbuild, { minify } from "rollup-plugin-esbuild";
 
@@ -16,6 +17,10 @@ function chunkFileName(chunk) {
     return `chunks/${languagePackage[1]}.js`;
   }
 
+  if (id.endsWith("/smarty/index.ts")) {
+    return "chunks/smarty.js";
+  }
+
   return "chunks/[name].js";
 }
 
@@ -29,5 +34,5 @@ export default {
     chunkFileNames: chunkFileName,
     plugins: [minify({ target: "es2022" })],
   },
-  plugins: [nodeResolve(), esbuild({ target: "es2022" })],
+  plugins: [lezer(), nodeResolve(), esbuild({ target: "es2022" })],
 };

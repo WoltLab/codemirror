@@ -1,0 +1,124 @@
+// Smarty dialect of the WoltLab Suite template engine. The tags are flat
+// instead of nested blocks, because template fragments (template listeners,
+// pages, boxes, phrases) frequently open a block without closing it.
+
+@precedence {
+  member,
+  call,
+  modifier @left,
+  prefix,
+  arithmetic @left,
+  compare @left,
+  and @left,
+  or @left,
+  eager
+}
+
+@top Template { element* }
+
+element { Text | Comment | Tag | EndTag | LiteralBlock }
+
+Text { (!eager text)+ }
+
+LiteralBlock { literalOpen LiteralText { literalText+ }? literalClose }
+
+@skip { space } {
+  Tag { tagStart tagBody tagEnd }
+
+  EndTag { endTagStart endTagName tagEnd }
+
+  literalOpen[@name=Tag] { tagStart kw<"literal"> tagEnd }
+
+  literalClose[@name=EndTag] { literalEndTagStart kw<"literal"> tagEnd }
+
+  tagBody {
+    kw<"if"> expression |
+    kw<"elseif"> expression |
+    kw<"else"> (kw<"if"> expression)? |
+    TagName Attribute* |
+    OutputPrefix? expression
+  }
+
+  endTagName { TagName | kw<"if"> | kw<"literal"> }
+
+  OutputPrefix { "@" | "#" | kw<"unsafe"> ":" }
+
+  Attribute { AttributeName { identifier | NumberLiteral } "=" (expression | BareWord { identifier }) }
+
+  expression[@isGroup=Expression] {
+    Variable |
+    Constant |
+    StringLiteral |
+    NumberLiteral |
+    @specialize[@name=BooleanLiteral]<identifier, "true" | "false" | "null"> |
+    ParenthesizedExpression { "(" expression ")" } |
+    ArrayLiteral { "[" (expression ("," expression)*)? "]" } |
+    MemberExpression { expression !member ("." | "->" | "?->") (PropertyName | Constant | Variable | NumberLiteral) } |
+    SubscriptExpression { expression !member "[" (expression | BareWord { identifier }) "]" } |
+    CallExpression { expression !call ArgList } |
+    ModifierExpression { expression !modifier "|" ModifierName (":" expression)* } |
+    UnaryExpression { !prefix ("!" | "-") expression } |
+    BinaryExpression {
+      expression !arithmetic (ArithOp | "-") expression |
+      expression !compare CompareOp expression |
+      expression !and LogicOp<"&&"> expression |
+      expression !or LogicOp<"||"> expression
+    }
+  }
+
+  ArgList { "(" (expression ("," expression)*)? ")" }
+
+  TagName { identifier }
+
+  PropertyName { identifier }
+
+  ModifierName { identifier }
+
+  kw<word> { @specialize[@name={word}]<identifier, word> }
+
+  LogicOp<op> { op }
+}
+
+@external tokens base from "./tokens" {
+  tagStart[@name="{", closedBy="}"]
+  endTagStart[@name="{", closedBy="}"]
+  Comment
+  text
+}
+
+@external tokens literal from "./tokens" {
+  literalEndTagStart[@name="{", closedBy="}"]
+  literalText
+}
+
+@tokens {
+  space { $[ \t\n\r\u000B\u000C]+ }
+
+  // Constants are written in uppercase only, any lowercase letter turns a
+  // word into an identifier, which keeps both tokens disjoint.
+  identifier { ($[A-Z_] $[A-Z_0-9]*)? $[a-z] $[a-zA-Z_0-9]* }
+
+  Constant { $[A-Z_] $[A-Z_0-9]* }
+
+  @precedence { identifier, Constant }
+
+  Variable { "$" $[a-zA-Z_] $[a-zA-Z_0-9]* }
+
+  // The template compiler ends a tag at the first `}`, even inside a string.
+  StringLiteral {
+    '"' (!["\\\n}] | "\\" _)* '"' |
+    "'" (!['\\\n}] | "\\" _)* "'"
+  }
+
+  NumberLiteral { @digit+ ("." @digit+)? }
+
+  CompareOp { "===" | "!==" | "==" | "!=" | "<=" | ">=" | "<" | ">" }
+
+  ArithOp { "+" | "*" | "/" | "%" | "^" }
+
+  tagEnd[@name="}", openedBy="{"] { "}" }
+
+  "(" ")" "[" "]" "." "->" "?->" "|" ":" "," "=" "!" "-" "@" "#" "&&" "||"
+}
+
+@detectDelim
